@@ -6,6 +6,7 @@
   (:import [piaget.connector.hpa Hpa]
            [piaget.event Event]))
 
+
 (def kplab-connector (Hpa. "http://localhost:8084/hpa-prod/api/query.jsp" "kplab"))
 
 (defn- alias-event [e]
