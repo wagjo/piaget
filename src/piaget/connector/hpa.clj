@@ -67,7 +67,6 @@
 
 (comment
   
-  (def kplab-connector (Hpa. "http://kplab.tuke.sk:8080/hpa-prod/api/query.jsp" "kplab"))
   (def kplab-connector (Hpa. "http://localhost:8084/hpa-prod/api/query.jsp" "kplab"))
 
   (piaget.connector/load-events kplab-connector {:from 5 :count 1})
@@ -78,6 +77,4 @@
 
   (piaget.connector/resource-name kplab-connector "http://www.kp-lab.org/system-model/TLO#Task_1.4")
 
-  (def h (http/http-agent "http://kplab.tuke.sk:8080/hpa-prod/api/query.jsp" :method "POST" :body "token=kplab&fn=get-activity&args=30000"))
-  
   )

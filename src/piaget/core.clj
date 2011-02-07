@@ -6,6 +6,45 @@
   (:import [piaget.connector.hpa Hpa]
            [piaget.event Event]))
 
+(defrecord Value [value probability negation])
+
+;; dat protocol na resolvovanie
+;; dat p a neg ako protocol, aby sli (p (neg :s) 0.4)
+
+(defn p [value prob]
+  value)
+
+(defn neg [value]
+  value)
+
+(defn all [value & values]
+  value) ;; pouziva sa pri keywordoch
+
+;;(defmacro defpattern def)
+
+(def p1
+  {:user (p :s 0.2)
+   :object (neg :x)
+   :type :x
+   :belongs-to #{1 2 3}
+   :time [0 1]
+   :x #{:y :z 5} ;; dat takto vztahy medzi keywordami???
+   })
+
+;; TODO: asi dat vztahy medzi keywordami samostatne
+
+(def conditions
+  {:x (neg :z)})
+
+(comment
+  ;; relation examples
+  ;; nedavat tu map, tu uz bude konkretny pattern
+  [p1 p2 p3]
+  [p0 #{p1 p2} p3]
+  )
+
+(defn match [data pattern conditions]
+  nil)
 
 (def kplab-connector (Hpa. "http://localhost:8084/hpa-prod/api/query.jsp" "kplab"))
 
@@ -38,6 +77,7 @@
   
   (def kplab-connector (hpa/Hpa. "http://localhost:8084/hpa-prod/api/query.jsp" "kplab"))
 
+  
 (a 3)
   
   (piaget.connector/resource-name kplab-connector
@@ -46,6 +86,4 @@
 
   (piaget.connector/resource-name kplab-connector "http://www.kp-lab.org/system-model/TLO#Task_1.4")
 
-  (def h (http/http-agent "http://kplab.tuke.sk:8080/hpa-prod/api/query.jsp" :method "POST" :body "token=kplab&fn=get-activity&args=30000"))
-  
   )
