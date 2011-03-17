@@ -28,8 +28,8 @@
                       :method "POST"
                       :body (url-body body)
                       :handler handler
-                      :connect-timeout 6000
-                      :read-timeout 6000))))
+                      :connect-timeout 60000
+                      :read-timeout 60000))))
 
 ;; Translate keys according to event type specification
 
@@ -69,7 +69,7 @@
   
   (def kplab-connector (Hpa. "http://localhost:8084/hpa-prod/api/query.jsp" "kplab"))
 
-  (piaget.connector/load-events kplab-connector {:from 5 :count 1})
+  (piaget.connector/load-events kplab-connector {:from 4 :count 1})
   
   (piaget.connector/resource-name kplab-connector
                                   ["http://www.kp-lab.org/system-model/TLO#Task_1.4"

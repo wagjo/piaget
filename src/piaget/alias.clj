@@ -20,15 +20,19 @@
 ;; last-alias, which contains last generated alias or nil,
 ;; if alias is requested for the first time
 
-;; helper functions
+;;;; Public API
 
-(defn- create-aliases [next-alias]
-  "Create new Aliases instance with supplied next-alias function."
-  (Aliases. {} {} nil next-alias))
+(defn create-aliases
+  "Creates new Aliases instance with supplied next-alias function,
+  or use counter-alias as next-alias function."
+  ([]
+     (create-aliases counter-alias))
+  ([next-alias]
+     (Aliases. {} {} nil next-alias)))
 
-(defn- add-new
-  [{:keys [alias->val val->alias last-alias next-alias] :as old} value]
+(defn add-new
   "Registers new value if new, returns new aliases."
+  [{:keys [alias->val val->alias last-alias next-alias] :as old} value]
   (if (contains? val->alias value)
     old ;; value already present
     (let [new-alias (next-alias last-alias)]
@@ -38,33 +42,20 @@
        new-alias
        next-alias))))
 
-;; Create default aliases
-
-;; choose counter alias type
-(defonce default-aliases (atom (create-aliases counter-alias)))
-
-;; public API
-
-(defn clear
-  "Clears all aliases, use with care!"
-  ([] (clear default-aliases))
-  ([aliases] (reset! aliases (create-aliases (:next-alias @aliases)))))
-
 (defn resolve
   "Returns value for an alias, nil if alias not found."
-  ([alias] (resolve default-aliases alias))
-  ([aliases alias] ((:alias->val @aliases) alias)))
+  [aliases alias]
+  ((:alias->val aliases) alias))
 
 (defn alias
-  "Registers and returns unique alias for supplied value,
-   returns nil if value is nil.
-   Do not call within transaction."
-  ([value] (alias default-aliases value))
-  ([aliases value]
-     (io!)
-     (when-not (nil? value)
-       (or
-        ;; optimized for cases where frequent calls are made in which
-        ;; value is already added in the aliases
-        ((:val->alias @aliases) value)
-        ((:val->alias (swap! aliases add-new value)) value)))))
+  "Returns unique alias for supplied value,
+   returns nil if value was not aliased."
+  [aliases value]
+  ((:val->alias aliases) value))
+
+(comment
+
+  (def a (add-new (create-aliases) :value))
+  (alias a :value)
+  
+)

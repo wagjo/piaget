@@ -3,6 +3,7 @@
             [piaget.connector]
             [piaget.event]
             [piaget.alias])
+  (:use [clojure.contrib.logging :only (info debug warn error)])
   (:import [piaget.connector.hpa Hpa]
            [piaget.event Event]))
 
@@ -69,10 +70,7 @@
   (do (dorun (piaget.connector/load-events kplab-connector {:from 5 :count x}))
       nil))
 
-
-
 (comment
-
   piaget.connector.hpa/tr-map
   
   (def kplab-connector (hpa/Hpa. "http://localhost:8084/hpa-prod/api/query.jsp" "kplab"))
