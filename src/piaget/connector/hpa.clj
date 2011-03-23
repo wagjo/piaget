@@ -1,3 +1,5 @@
+;; Copyright (C) 2011, Jozef Wagner. All rights reserved. 
+
 (ns piaget.connector.hpa
   (:use [clojure.contrib.str-utils :only [str-join]])
   (:require [piaget.connector]
@@ -33,7 +35,7 @@
 
 ;; Translate keys according to event type specification
 
-(def tr-map
+(def from-hpa
   {:act-time :start
    :actor-id :actor
    :entity-id :entity
@@ -43,21 +45,42 @@
    :description :desc
    :act_desc :desc})
 
+(def to-hpa
+  {:start :act-time
+   :actor :actor-id
+   :entity :entity-id
+   :belongs-to :object-belongs-to
+   :refers-to :artefact-refers-to
+   :tool :used-tool
+   :desc :act_desc})
+
 (defn- tr-events [events]
   "Translate some keys in the event, based on event specification."
-  (let [tr-event (fn [[k v]] [(or (tr-map k) k) v])]
+  (let [tr-event (fn [[k v]] [(or (from-hpa k) k) v])]
     (map #(reduce conj {} (map tr-event %)) events)))
+
+(defn- prepare-filter [filter]
+  (let [prepare-entry (fn [[k v]] [(or (to-hpa k) k) (if (set? v)
+                                      (cons :should-be-set v)
+                                      v)])]
+    (reduce conj {} (map prepare-entry filter))))
+
+(defn- handle-error [what]
+  (if (map? what)
+    (throw (RuntimeException. (str "error fetching events " (:response what))))
+    what))
 
 ;; Hpa type, implementing Connector protocol
 
 (deftype Hpa [url password]
   piaget.connector/Connector
   (load-events [this filter]
-    (tr-events
-     (http-post url {:token password
-                     :fn "load-events"
-                     :args (json/json-str filter)
-                     :timeout "30000"})))
+               (tr-events
+                (handle-error
+                 (http-post url {:token password
+                                 :fn "load-events"
+                                 :args (json/json-str (prepare-filter filter))
+                                 :timeout "30000"}))))
   (resource-name [this ids]
     (http-post url {:token password
                     :fn "resource-name"
@@ -66,10 +89,12 @@
 
 
 (comment
-  
+
+  (def sample-filter {:count 20 :type #{"creation" "modification"}})
+
   (def kplab-connector (Hpa. "http://localhost:8084/hpa-prod/api/query.jsp" "kplab"))
 
-  (piaget.connector/load-events kplab-connector {:from 4 :count 1})
+  (map :type (piaget.connector/load-events kplab-connector sample-filter))
   
   (piaget.connector/resource-name kplab-connector
                                   ["http://www.kp-lab.org/system-model/TLO#Task_1.4"

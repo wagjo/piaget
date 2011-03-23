@@ -1,3 +1,5 @@
+;; Copyright (C) 2011, Jozef Wagner. All rights reserved. 
+
 (ns piaget.alias
   "Provide unique alias for value of any type.
    Purpose of this is to consume less memory when storing large

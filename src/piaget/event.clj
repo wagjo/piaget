@@ -1,3 +1,5 @@
+;; Copyright (C) 2011, Jozef Wagner. All rights reserved. 
+
 (ns piaget.event)
 
 ;; TODO: defrecord docstring???
