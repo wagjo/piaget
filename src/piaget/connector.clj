@@ -1,7 +1,7 @@
 ;; Copyright (C) 2011, Jozef Wagner. All rights reserved. 
 
 (ns piaget.connector
-  "bla bla")
+  "Protocol for connectors. Connectors fetch events from repositories")
 
 (defprotocol Connector
   (load-events [this filter]
@@ -16,15 +16,13 @@
   - Following collections have specific meaning if used as value:
     #{}   - search for any of specified values (logical OR)
     [X Y] - search for values in a given X Y range, used e.g.
-            in time range
-  - see source for examples")
+            in time range")
   (resource-name [this ids]
  "Get a last known name for resources based on their ids.
   Parameter ids can be a single id or seq of ids."))
 
 ;; NOTE: do we need support for logical AND in filter?
 ;; TODO: use joda time and update docstring and example
-;; TODO: Why [this id & ids] is not supported in defprotocol?
 
 (comment
   ;; filter example

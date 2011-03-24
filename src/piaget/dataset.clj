@@ -39,8 +39,8 @@
 (defn create-dataset [connector filter]
   "Creates a dataset based on specified filter and connection"
   (let [data (piaget.connector/load-events connector filter)
-        parse-fn (fn [[evts a] e] (let [result (transform-event e a)]
-                                   [(cons (result 0) evts) (result 1)]))
+        parse-fn (fn [[evts a] e] (let [[t-e a] (transform-event e a)]
+                                   [(cons t-e evts) a]))
         [parsed-data aliases] (reduce parse-fn
                                       [nil (piaget.alias/create-aliases)]
                                       data)]
@@ -62,6 +62,8 @@
   (def sample-filter {:count 20 :start ["2010-06" "2011"]})
 
   (def sample-filter {:count 6 :id 3})
+
+  (time (def d (piaget.connector/load-events hpa-connector sample-filter)))
 
   (time (def r (create-dataset hpa-connector sample-filter)))
 
