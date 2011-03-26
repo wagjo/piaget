@@ -3,6 +3,7 @@
 (ns piaget.pattern.value
   "Match Pattern Fragment Entry values"
   (:use [piaget.negation :only (neg)])
+  (:require [piaget.alias])
   (:import [piaget.negation Negation]))
 
 ;; Pattern Fragment Entry value can be:
@@ -35,7 +36,8 @@
       [current-value new-value])))
 
 (defprotocol MatchValueProtocol
-  (match-value* [this literal bindings]))
+  (match-value* [this literal bindings])
+  (alias-value [this aliases]))
 
 (declare match-value)
 
@@ -49,6 +51,8 @@
                    #{bindings})
                  (when (nil? literal)
                    #{bindings})))
+  (alias-value [this aliases]
+               this)
   ;; match string or integer (aliased) literal
   Object
   (match-value* [this literal bindings]
@@ -58,6 +62,8 @@
                    #{bindings})
                  (when (= this literal)
                    #{bindings})))
+  (alias-value [this aliases]
+               (or (piaget.alias/alias aliases this) -1))
   ;; match variable
   clojure.lang.Keyword
   (match-value* [variable literal bindings]
@@ -67,11 +73,15 @@
                             (match-value bound-value literal (dissoc bindings variable))))
                   ;; variable not bound, make new binding
                   #{(assoc bindings variable literal)}))
+  (alias-value [this aliases]
+               this)
   ;; match negation of something
   Negation
   (match-value* [this literal bindings]
                ;; negate literal and match it with contents
-               (match-value (:contents this) (neg literal) bindings))
+                (match-value (:contents this) (neg literal) bindings))
+  (alias-value [this aliases]
+               (neg (alias-value (:contents this) aliases)))
   ;; match all elements in the vector
   clojure.lang.IPersistentVector
   (match-value* [this literal bindings*]
@@ -84,10 +94,14 @@
                           (set (mapcat #(match-value (first elements) literal %)
                                        bindings)))
                    bindings)))
+  (alias-value [this aliases]
+               (vec (map #(alias-value % aliases) this)))
   ;; match any elements in the set
   clojure.lang.IPersistentSet
   (match-value* [this literal bindings]
-               (set (mapcat #(match-value % literal bindings) this))))
+                (set (mapcat #(match-value % literal bindings) this)))
+  (alias-value [this aliases]
+               (set (map #(alias-value % aliases) this))))
 
 ;;;; Public API
 

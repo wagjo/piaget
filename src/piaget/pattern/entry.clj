@@ -2,7 +2,7 @@
 
 (ns piaget.pattern.entry
   "Match Pattern Fragment Entries"
-  (:use [piaget.pattern.value :only (match-value)]))
+  (:use [piaget.pattern.value :only (match-value alias-value)]))
 
 ;;; Pattern Fragment Entry
 
@@ -15,4 +15,8 @@
    bindings. Returns set of possible bindings when matching is successfull,
    nil otherwise."
   [[key value] event bindings]
-  (match-value value (event key) bindings))
+  (match-value value (key event) bindings))
+
+(defn alias-entry
+  [[key value] aliases]
+  [key (alias-value value aliases)])

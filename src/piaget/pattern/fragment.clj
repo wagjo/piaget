@@ -2,7 +2,7 @@
 
 (ns piaget.pattern.fragment
   "Match Pattern Fragments"
-  (:use [piaget.pattern.entry :only (match-entry)]))
+  (:use [piaget.pattern.entry :only (match-entry alias-entry)]))
 
 ;;; Pattern Fragment
 
@@ -15,7 +15,8 @@
 ;; elaborate fragments
 
 (defprotocol FragmentProtocol
-  (match-fragment* [this event bindings]))
+  (match-fragment* [this event bindings])
+  (alias-fragment [this aliases]))
 
 (defrecord Fragment [contents]
   FragmentProtocol
@@ -26,16 +27,23 @@
 (extend-protocol FragmentProtocol
   clojure.lang.IPersistentMap
   (match-fragment* [this event bindings*]
-                  ;; match all Fragment entries
-                  (loop [entries this
-                         bindings #{bindings*}]
-                    (if entries
-                      (recur (next entries) ; match next entry
-                             ;; must match current entry on all
-                             ;; available bindings
-                             (set (mapcat #(match-entry (first entries) event %)
-                                          bindings)))
-                      bindings))))
+                   ;; first see if :start matches
+                   (when (or (nil? (:start bindings*))
+                             (neg? (compare (:start bindings*)
+                                            (:start event))))
+                     ;; match all Fragment entries
+                     (loop [entries this
+                            bindings #{bindings*}]
+                       (if entries
+                         (recur (next entries) ; match next entry
+                                ;; must match current entry on all
+                                ;; available bindings
+                                (set (mapcat #(match-entry (first entries) event %)
+                                             bindings)))
+                         bindings))))
+  (alias-fragment [this aliases]
+                  ;; translate all values
+                  (reduce conj {} (map #(alias-entry % aliases) this))))
 
 ;;;; Public API
 
