@@ -1,59 +1,16 @@
 ;; Copyright (C) 2011, Jozef Wagner. All rights reserved. 
 
 (ns piaget.pattern
+  "Performs a pattern search on a given dataset"
   (:require [piaget.connector.hpa]
             [piaget.connector]
             [piaget.event]
             [piaget.alias])
-  (:use [clojure.contrib.logging :only (info debug warn error)])
+  (:use [clojure.contrib.logging :only (info debug warn error)]
+        [piaget.pattern.fragment :only (match-fragment)]
+        [piaget.negation :only (neg)])
   (:import [piaget.connector.hpa Hpa]
            [piaget.event Event]))
-
-;;; Pattern Fragment Entry
-
-;; Pattern Fragment Entry is a key-value pair
-
-;; Pattern Fragment Entry key must be of Keyword or String type
-
-;; Pattern Fragment Entry value:
-;; - String, Integer - match given value
-;; - Keyword - define variable
-;; - modified value - see below
-
-;; Pattern Fragment Entry Value modifiers
-
-(defrecord EntryValueNegation. [value])
-
-(defn neg
-  "Negates a given value"
-  [value]
-  (EntryValueNegation. value))
-
-;;; Pattern Fragment
-;; Pattern fragment can be a clojure map or instance of Fragment
-;; record.
-;; If fragment is a clojure map, search will try to match all its
-;; entries (logical and on the entries)
-;; TODO: define possible contents in the fragment record. Idea is to
-;; support clojure sets for or and vectors for and to allow more
-;; elaborate fragments
-
-
-(defprotocol FragmentProtocol
-  (get-fragment [this]))
-
-(defrecord Fragment [contents]
-  FragmentProtocol
-  (get-fragment [this] contents))
-
-(extend-protocol FragmentProtocol
-  clojure.lang.IPersistentMap
-  (get-fragment [this] this))
-
-(defn fragment?
-  "Returns true if e is pattern fragment"
-  [e]
-  (or (map? e) (= Fragment (type e))))
 
 ;;; Relationships
 
@@ -74,17 +31,14 @@
 (defn near
   "Limits results to be close to each other"
   [& relationships]
-  (ConstrainedRelationship. :near relationship))
+  (ConstrainedRelationship. :near relationships))
 
-;;; Conditions
-
-;; Condition is a map of given facts which have to be valid all the time
-
-;;; Searching
+;;;; Public API
 
 (defn search
   "Searches for pattern occurences in the given dataset.
-  Conditions contain additional starting parameters."
+  Conditions contain starting variable bindings,
+  its keys must be Keywords which represent variables."
   [dataset pattern conditions])
 
 ;;;; Examples
