@@ -57,13 +57,13 @@
 (defn- tr-events [events]
   "Translate some keys in the event, based on event specification."
   (let [tr-event (fn [[k v]] [(or (from-hpa k) k) v])]
-    (map #(reduce conj {} (map tr-event %)) events)))
+    (map #(into {} (map tr-event %)) events)))
 
 (defn- prepare-filter [filter]
   (let [prepare-entry (fn [[k v]] [(or (to-hpa k) k) (if (set? v)
                                       (cons :should-be-set v)
                                       v)])]
-    (reduce conj {} (map prepare-entry filter))))
+    (into {} (map prepare-entry filter))))
 
 (defn- handle-error [what]
   (if (map? what)

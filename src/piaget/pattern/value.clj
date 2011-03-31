@@ -78,7 +78,7 @@
   ;; match negation of something
   Negation
   (match-value* [this literal bindings]
-               ;; negate literal and match it with contents
+                ;; negate literal and match it with contents
                 (match-value (:contents this) (neg literal) bindings))
   (alias-value [this aliases]
                (neg (alias-value (:contents this) aliases)))

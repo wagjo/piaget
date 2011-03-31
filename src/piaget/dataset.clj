@@ -13,6 +13,9 @@
 
 (defrecord Dataset [data aliases filter connector])
 
+(defn- fmap [f m]
+  (into {} (for [[k v] m] [k (f v)])))
+
 (defn- alias-event [e]
   "Alias values in the event so it takes less memory."  
   (let [new-event (Event. (:id e) (:start e))
@@ -20,7 +23,7 @@
         should-translate? #(not (#{:end} %))
         do-alias (fn [[k v]]
                    [k (if (should-translate? k) (piaget.alias/alias v) v)])]
-    (reduce conj new-event (map do-alias processed-event))))
+    (into new-event (map do-alias processed-event))))
 
 (defn transform-event
   "Should return a translated event and an updated aliases"
@@ -32,7 +35,7 @@
         new-aliases (reduce piaget.alias/add-new aliases value-seq)
         do-alias (fn [[k v]]
                    [k (if (should-translate? k) (piaget.alias/alias new-aliases v) v)])]
-    [(reduce conj new-event (map do-alias processed-event)) new-aliases]))
+    [(into new-event (map do-alias processed-event)) new-aliases]))
 
 ;;;; Public API
 
