@@ -15,7 +15,8 @@
 
 (defn- extract-result
   [bindings]
-  (:id (:event bindings)))
+  (:event bindings)
+  #_(:id (:event bindings)))
 
 ;;; Relationships
 
@@ -112,12 +113,14 @@
     {:type "creation"})
 
   (def pe2
-    {:type "modification"})
+       {:type (neg "modification")})
 
   (def pe3
-    {:type "opening"})
+       {:type "opening"})
 
-  (search r [pe2])
+  ((:alias->val (:aliases r)) 1)
+
+  (map :type (search r [pe2]))
 
   (count (:data r))
 

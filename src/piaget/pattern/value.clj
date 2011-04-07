@@ -3,8 +3,11 @@
 (ns piaget.pattern.value
   "Match Pattern Fragment Entry values"
   (:use [piaget.negation :only (neg)])
-  (:require [piaget.alias])
-  (:import [piaget.negation Negation]))
+  (:require [piaget.alias]
+            [piaget.comparison])
+  (:import [piaget.negation Negation]
+           [piaget.comparison LessThan MoreThan
+            LessThanOrEqual MoreThanOrEqual]))
 
 ;; Pattern Fragment Entry value can be:
 ;; - String, Integer - literal value
@@ -35,6 +38,33 @@
       ;; makes a new vector if current-value is not vector
       [current-value new-value])))
 
+(defprotocol MatchLiteralProtocol
+  (match-literal [this value]))
+
+(extend-protocol MatchLiteralProtocol
+  nil
+  (match-literal [this value]
+                 (nil? value))
+  Object
+  (match-literal [this value]
+                 (= this value))
+  Negation
+  (match-literal [this value]
+                 (not (match-literal (:contents this) value)))
+  LessThan
+  (match-literal [this value]
+                 (piaget.comparison/compare this value))
+  MoreThan
+  (match-literal [this value]
+                 (piaget.comparison/compare this value))
+  LessThanOrEqual
+  (match-literal [this value]
+                 (piaget.comparison/compare this value))
+  MoreThanOrEqual
+  (match-literal [this value]
+                 (piaget.comparison/compare this value))
+  )
+
 (defprotocol MatchValueProtocol
   (match-value* [this literal bindings])
   (alias-value [this aliases]))
@@ -45,23 +75,17 @@
   ;; match if event does not contain a requested value
   nil
   (match-value* [this literal bindings]
-               ;; literal can be an object or a negation of an object
-               (if (= Negation (type literal))
-                 (when-not (nil? (:contents literal))
-                   #{bindings})
-                 (when (nil? literal)
-                   #{bindings})))
+                ;; literal can be an object or a negation of an object
+                (when (match-literal literal this)
+                  #{bindings}))
   (alias-value [this aliases]
                this)
   ;; match string or integer (aliased) literal
   Object
   (match-value* [this literal bindings]
-               ;; literal can be an object or a negation of an object
-               (if (= Negation (type literal))
-                 (when-not (= this (:contents literal))
-                   #{bindings})
-                 (when (= this literal)
-                   #{bindings})))
+                ;; literal can be an object or a negation of an object
+                (when (match-literal literal this)
+                  #{bindings}))
   (alias-value [this aliases]
                (or (piaget.alias/alias aliases this) -1))
   ;; match variable
@@ -82,18 +106,26 @@
                 (match-value (:contents this) (neg literal) bindings))
   (alias-value [this aliases]
                (neg (alias-value (:contents this) aliases)))
+  ;; match comparison stuff
+  LessThan
+  (match-value* [this literal bindings]
+                ;; TODO
+                )
+  (alias-value [this aliases]
+               (LessThan. (alias-value (:contents this) aliases) (:compare-fn this)))
   ;; match all elements in the vector
   clojure.lang.IPersistentVector
   (match-value* [this literal bindings*]
-               (loop [elements this
-                      bindings #{bindings*}]
-                 (if elements
-                   (recur (next elements) ; match next element
-                          ;; must match current element on all
-                          ;; available bindings
-                          (set (mapcat #(match-value (first elements) literal %)
-                                       bindings)))
-                   bindings)))
+                (when-not (empty? this)
+                  (loop [elements this
+                         bindings #{bindings*}]
+                    (if elements
+                      (recur (next elements) ; match next element
+                             ;; must match current element on all
+                             ;; available bindings
+                             (set (mapcat #(match-value (first elements) literal %)
+                                          bindings)))
+                      bindings))))
   (alias-value [this aliases]
                (vec (map #(alias-value % aliases) this)))
   ;; match any elements in the set
