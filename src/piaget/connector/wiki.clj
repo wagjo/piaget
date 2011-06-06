@@ -144,15 +144,21 @@
 
 ;;;; Connector
 
-(deftype Wiki [filename]
+(deftype Wiki [filename max-events]
   piaget.connector/Connector
   (load-events [this filter]
                ;; filter is ignored
-               (dumped-events-seq filename))
+               (if max-events
+                 (take max-events
+                       (dumped-events-seq filename))
+                 (dumped-events-seq filename)))
   (resource-name [this ids]
                  (throw (UnsupportedOperationException. "not available"))))
 
 (comment
   ;;;; Create dump
   (dump-reverts (event-seq (xml-from-gz-file "wiki.xml.gz")) "reverts.clj")
+  ;;;; Test connector
+  (def a (Wiki. "reverts-sorted.clj"))
+  (take 3 (piaget.connector/load-events a nil))
   )

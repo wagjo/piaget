@@ -17,7 +17,8 @@
 
 (defn- extract-result
   [bindings]
-  (:event bindings)
+  bindings
+  #_(:event bindings)
   #_(:id (:event bindings)))
 
 ;;; Relationships
@@ -43,10 +44,11 @@
   ;; one Fragment
   clojure.lang.IPersistentMap
   (match-pattern* [this events bindings]
-                  (set (mapcat
-                        #(match-fragment this %
-                                         (assoc bindings :event %))
-                        events)))
+                  ;; set was here, but we want something like lazy set
+                  (mapcat
+                   #(match-fragment this %
+                                    (assoc bindings :event %))
+                   events))
   (alias-pattern [this aliases]
                  (alias-fragment this aliases))
   ;; seqable
@@ -101,30 +103,81 @@
 
   (= PatternElement (type a))
 
-  (def wiki-connector (Wiki. "reverts-sorted.clj"))
+  (def wiki-connector (Wiki. "reverts-sorted.clj" 1000))
+
+  ;; Same admin reverted culprit on two different pages
 
   (def f1 {:actor :X :entity :Y :culprit :Z})
 
-  (def f2 {:actor :X :entity (neg :Y) :culprit :Z})  
+  (def f2 {:actor :X :entity (neg :Y) :culprit :Z})
 
-  (def f3 {:actor :X :culprit :C})
+  (def s (search r [f1 f2]))
 
-  (def f4 {:actor :Y :culprit :C})
+  ;; Two admins reverted same culprit on same document
 
+  (def f3 {:actor :ADMIN1 :culprit :C :entity :E})
+
+  (def f4 {:actor :ADMIN2 :culprit :C :entity :E})
+
+  (def s (search r [f3 f4] {:ADMIN1 (neg :ADMIN2)}))
+
+  ;; Two admins reverted same culprit on different document
+
+  (def f5 {:actor :ADMIN1 :culprit :C :entity :E})
+
+  (def f6 {:actor :ADMIN2 :culprit :C :entity (neg :E)})
+
+  (def s (search r [f5 f6] {:ADMIN1 (neg :ADMIN2)}))
+
+  ;; Three different admins reverted same culprit every time on
+  ;; different entity
+
+  (def f7 {:actor :ADMIN1 :culprit :C :entity :E1})
+
+  (def f8 {:actor :ADMIN2 :culprit :C :entity :E2})
+
+  (def f9 {:actor :ADMIN3 :culprit :C :entity :E3})
+
+  (def s (search r [f7 f8 f9] {:ADMIN2 (neg :ADMIN1)
+                               :ADMIN3 [(neg :ADMIN2)
+                                        (neg :ADMIN1)]
+                               :E2 (neg :E1)
+                               :E3 [(neg :E2)
+                                    (neg :E1)]}))
+  
+  (def s (search r [f7 f8 f9]))
+  
+  (first (filter #(and (vector? %)
+                       (vector? (first (second %)))) s))
+
+  (first s)
+  
   (def f5 {:actor :Z :culprit :C})  
 
-  (def d (piaget.connector/load-events wiki-connector nil))
+  (def d (take 10 (piaget.connector/load-events wiki-connector nil)))
 
   (def r (piaget.dataset/create-fake-dataset wiki-connector nil))
 
-  (take 10 (:data r))
+  (take 1 (:data r))
 
   (first d)
 
-  (map :actor (first (filter vector? (search r [f3 f4]))))
+  ;; TODO: negation is bugged
+
+  (first s)
+
+  (defn a [x]
+    (> (count x) 2))
+
+  (first s)
+
+  (second (filter vector? s))
+  (first (filter #(and (vector? %)
+                       (some a (next %))) s))
+  
   (first (filter #(do (info %) (vector? %)) (search r [f3 f4] {:X (neg :Y)
                                             :Y (neg :Z)
-                                            :Z (neg :X)})))  
+                                            :Z (neg :X)})))
 
 
 

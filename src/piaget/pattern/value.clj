@@ -102,8 +102,13 @@
   ;; match negation of something
   Negation
   (match-value* [this literal bindings]
-                ;; negate literal and match it with contents
-                (match-value (:contents this) (neg literal) bindings))
+                ;; shortcut, if there are negation on both sides, we
+                ;; are done
+                (if (= (type literal)
+                       piaget.negation.Negation)
+                  #{bindings}
+                  ;; negate literal and match it with contents
+                  (match-value (:contents this) (neg literal) bindings)))
   (alias-value [this aliases]
                (neg (alias-value (:contents this) aliases)))
   ;; match comparison stuff
