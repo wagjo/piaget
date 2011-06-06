@@ -9,7 +9,7 @@
   :jvm-opts ["-Dfile.encoding=utf-8"
              "-Dswank.encoding=utf-8"
              "-Xms256m"
-             "-Xmx512m"
+             "-Xmx1024m"
              "-XX:MaxPermSize=256m"
              "-Djava.util.logging.config.file=logging.properties"
              #_"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8030"])
