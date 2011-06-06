@@ -49,6 +49,9 @@
                                       data)]
     (Dataset. parsed-data aliases filter connector)))
 
+(defn create-fake-dataset [connector filter]
+  (Dataset. (piaget.connector/load-events connector filter) nil filter connector))
+
 ;;;; Examples
 
 (comment

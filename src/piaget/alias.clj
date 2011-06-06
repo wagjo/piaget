@@ -47,13 +47,17 @@
 (defn resolve
   "Returns value for an alias, nil if alias not found."
   [aliases alias]
-  ((:alias->val aliases) alias))
+  (if aliases
+    ((:alias->val aliases) alias)
+    alias))
 
 (defn alias
   "Returns unique alias for supplied value,
    returns nil if value was not aliased."
   [aliases value]
-  ((:val->alias aliases) value))
+  (if aliases
+    ((:val->alias aliases) value)
+    value))
 
 (comment
 

@@ -4,6 +4,7 @@
   "Performs a pattern search on a given dataset"
   (:require [piaget.connector.hpa]
             [piaget.connector]
+            [piaget.connector.wiki]
             [piaget.event]
             [piaget.alias]
             [piaget.dataset])
@@ -11,6 +12,7 @@
         [piaget.pattern.fragment :only (match-fragment alias-fragment)]
         [piaget.negation :only (neg)])
   (:import [piaget.connector.hpa Hpa]
+           [piaget.connector.wiki Wiki]
            [piaget.event Event]))
 
 (defn- extract-result
@@ -98,6 +100,31 @@
   (def a (PatternElement. 1))
 
   (= PatternElement (type a))
+
+  (def wiki-connector (Wiki. "reverts-sorted.clj"))
+
+  (def f1 {:actor :X :entity :Y :culprit :Z})
+
+  (def f2 {:actor :X :entity (neg :Y) :culprit :Z})  
+
+  (def f3 {:actor :X :culprit :C})
+
+  (def f4 {:actor :Y :culprit :C})
+
+  (def f5 {:actor :Z :culprit :C})  
+
+  (def d (piaget.connector/load-events wiki-connector nil))
+
+  (def r (piaget.dataset/create-fake-dataset wiki-connector nil))
+
+  (take 10 (:data r))
+
+  (first d)
+
+  (map :actor (first (filter vector? (search r [f3 f4]))))
+  (first (filter #(do (info %) (vector? %)) (search r [f3 f4] {:X (neg :Y)
+                                            :Y (neg :Z)
+                                            :Z (neg :X)})))  
 
 
 

@@ -2,3 +2,5 @@ pom.xml
 *jar
 lib
 classes
+reverts*
+wiki.xml.gz
