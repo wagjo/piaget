@@ -21,6 +21,25 @@
   #_(:event bindings)
   #_(:id (:event bindings)))
 
+(def *fail* (atom #{}))
+
+(def *saved* (atom 0))
+
+(defn clear-failed! []
+  (info "fails cleared")
+  (reset! *saved* 0)
+  (reset! *fail* #{}))
+
+(defn is-failed? [b]
+  (and (contains? @*fail* b)
+       (do (swap! *saved* inc) true)))
+
+(defn failed! [b]
+  #_(error b)
+  (swap! *fail* conj b))
+
+(def *count* (atom 0))
+
 ;;; Relationships
 
 ;; Possible relationships:
@@ -36,6 +55,11 @@
 
 (defrecord ConstrainedRelationship [constrain relationship])
 
+(defn special-event-seq [events]
+  (lazy-seq
+   (when events
+     (cons [(first events) (next events)] (special-event-seq (next events))))))
+
 (extend-protocol PatternProtocol
   ;; nil
   nil
@@ -45,10 +69,20 @@
   clojure.lang.IPersistentMap
   (match-pattern* [this events bindings]
                   ;; set was here, but we want something like lazy set
-                  (mapcat
-                   #(match-fragment this %
-                                    (assoc bindings :event %))
-                   events))
+                  (let [bindings (assoc bindings :pattern (conj (:pattern bindings) this))
+                        f (dissoc bindings :start :event :next-events)]
+                    (if (is-failed? f)
+                      (do (info (str "saved a bunch of time " f)) nil)
+                      (let [res (mapcat
+                                 (fn [es]
+                                   (swap! *count* inc)
+                                   (map #(assoc % :next-events (second es))
+                                              (match-fragment this (first es)
+                                                              (assoc bindings :event (first es)))))
+                                 (special-event-seq events))]
+                        (when (empty? res)
+                          (failed! f))
+                        res))))
   (alias-pattern [this aliases]
                  (alias-fragment this aliases))
   ;; seqable
@@ -58,7 +92,7 @@
                   (let [result (match-pattern* (first this) events bindings)
                         next-bindings (map #(assoc % :start (:start (:event %))) result)
                         next-fn (fn [b]
-                                  (let [next-result (match-pattern* (next this) events b)]
+                                  (let [next-result (match-pattern* (next this) (:next-events b) b)]
                                     (if next-result
                                       [(extract-result b) next-result]
                                       (extract-result b))))]
@@ -89,6 +123,8 @@
   its keys must be Keywords which represent variables."
   ([dataset pattern] (search dataset pattern {}))
   ([dataset pattern conditions]
+     (clear-failed!)
+     (reset! *count* 0)
      (let [events (:data dataset)
            aliased-pattern (alias-pattern pattern (:aliases dataset))]
        (match-pattern* aliased-pattern events conditions))))
@@ -104,6 +140,23 @@
   (= PatternElement (type a))
 
   (def wiki-connector (Wiki. "reverts-sorted.clj" 1000))
+
+  (def r (piaget.dataset/create-fake-dataset wiki-connector nil))  
+
+  (first (filter #(and (vector? %)
+                       (vector? (first (second %)))) s))
+
+  (count @*fail*)
+
+  (first @*fail*)
+
+  @*saved*
+
+  @*count*
+
+  (first s)
+
+  (time (count s))
 
   ;; Same admin reverted culprit on two different pages
 
@@ -156,7 +209,7 @@
 
   (def d (take 10 (piaget.connector/load-events wiki-connector nil)))
 
-  (def r (piaget.dataset/create-fake-dataset wiki-connector nil))
+
 
   (take 1 (:data r))
 
