@@ -113,7 +113,7 @@
 
 (defn dump-reverts [events filename]
   "Dumps revert events into file."
-  (ds/write-lines "reverts.clj"
+  (ds/write-lines filename
                   (map #(select-keys % [:id :title :start
                                         :entity :entity-title
                                         :actor :actor-name :culprit])
@@ -158,7 +158,9 @@
 (comment
   ;;;; Create dump
   (dump-reverts (event-seq (xml-from-gz-file "wiki.xml.gz")) "reverts.clj")
+  ;;;; Sort dump
+  (sort-dump "reverts.clj" "reverts-sorted.clj")
   ;;;; Test connector
-  (def a (Wiki. "reverts-sorted.clj"))
+  (def a (Wiki. "reverts-sorted.clj" 10000))
   (take 3 (piaget.connector/load-events a nil))
   )

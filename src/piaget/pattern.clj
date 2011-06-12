@@ -166,6 +166,10 @@
 
   (def s (search r [f1 f2]))
 
+  (let [s (first (filter #(and (vector? %)) s))]
+    [(dissoc (first s) :next-events)
+     (dissoc (first (second s)) :next-events)])
+
   ;; Two admins reverted same culprit on same document
 
   (def f3 {:actor :ADMIN1 :culprit :C :entity :E})
